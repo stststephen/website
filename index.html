@@ -117,6 +117,16 @@
   .btn-text:hover { color: var(--accent); }
 
   .release-count { font-size: 12px; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .sort-control { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .sort-label { color: var(--muted); margin-right: 2px; }
+  .sort-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px;
+    display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 4px;
+  }
+  .sort-btn:hover { color: var(--ink); }
+  .sort-btn.active { color: var(--accent); font-weight: 600; }
+  .sort-btn svg { transition: transform 0.15s ease; }
+  .sort-btn.dir-asc svg { transform: rotate(180deg); }
   .refresh-btn {
     background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px;
     display: inline-flex; align-items: center; gap: 5px; padding: 2px 4px;
@@ -312,7 +322,9 @@
     selectedReleaseId: null,
     listenPop: null,
     loading: true,
-    loadError: null
+    loadError: null,
+    sortField: "date",
+    sortDir: "desc"
   };
 
   function setState(patch) {
@@ -344,6 +356,22 @@
   function releaseVisible(release, active) {
     if (!active.length) return true;
     return (release.tracks || []).some(function (t) { return trackMatches(t, active); });
+  }
+
+  // ---------- sorting ----------
+  function sortReleases(releases) {
+    var field = state.sortField, dir = state.sortDir === "asc" ? 1 : -1;
+    var sorted = releases.slice();
+    sorted.sort(function (a, b) {
+      var cmp;
+      if (field === "name") {
+        cmp = String(a.album || "").localeCompare(String(b.album || ""));
+      } else {
+        cmp = (Number(a.year) || 0) - (Number(b.year) || 0);
+      }
+      return cmp * dir;
+    });
+    return sorted;
   }
 
   // ---------- sidebar ----------
@@ -433,10 +461,16 @@
     }
 
     var active = activeRoleKeys();
-    var visible = state.releases.filter(function (r) { return releaseVisible(r, active); });
+    var visible = sortReleases(state.releases.filter(function (r) { return releaseVisible(r, active); }));
 
+    var arrow = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
     var html = '<div class="release-count tabular">' + visible.length + ' release' + (visible.length === 1 ? "" : "s") +
-      (active.length ? " matching filter" : "") + '</div>';
+      (active.length ? " matching filter" : "") + '<div class="sort-control"><span class="sort-label">Sort</span>' +
+      ["date", "name"].map(function (f) {
+        var isActive = state.sortField === f;
+        return '<button class="sort-btn' + (isActive ? " active" : "") + (isActive && state.sortDir === "asc" ? " dir-asc" : "") +
+          '" data-sort-field="' + f + '">' + (f === "date" ? "Date" : "Name") + (isActive ? arrow : "") + '</button>';
+      }).join("") + '</div></div>';
 
     if (!visible.length) {
       html += '<div class="empty-state">' + (state.releases.length ? "No releases match that filter." : "Nothing here yet.") + '</div>';
@@ -536,6 +570,16 @@
         if (!release || !(release.bandcamp || release.spotify || release.youtube)) return;
         var pos = positionPopover(e, 220, 110);
         setState({ listenPop: { title: release.album, bandcamp: release.bandcamp, spotify: release.spotify, youtube: release.youtube, top: pos.top, left: pos.left } });
+      });
+    });
+    document.querySelectorAll("[data-sort-field]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var field = el.getAttribute("data-sort-field");
+        if (state.sortField === field) {
+          setState({ sortDir: state.sortDir === "asc" ? "desc" : "asc" });
+        } else {
+          setState({ sortField: field, sortDir: field === "name" ? "asc" : "desc" });
+        }
       });
     });
   }
