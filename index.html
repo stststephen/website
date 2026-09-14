@@ -151,11 +151,6 @@
     overflow: hidden; color: var(--paper);
   }
   .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .art .play-overlay {
-    position: absolute; inset: 0; background: rgba(20,17,13,0.5);
-    display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease;
-  }
-  .art:hover .play-overlay { opacity: 1; }
 
   .release-meta { flex: 1 1 auto; min-width: 0; }
   .release-meta .name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -191,11 +186,18 @@
   .detail-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .detail-title { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; margin-top: 16px; text-wrap: balance; }
   .detail-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .detail-links { display: flex; gap: 10px; margin-top: 16px; }
-  .detail-desc {
-    font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); margin-top: 20px; white-space: pre-wrap;
+  .detail-links {
+    display: flex; flex-wrap: wrap; gap: 14px 10px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line);
   }
-  .detail-embed { margin-top: 20px; border-radius: 12px; overflow: hidden; }
+  .detail-desc {
+    font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); margin-top: 16px; white-space: pre-wrap;
+  }
+  .role-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .role-tag {
+    background: var(--paper-sunken); color: var(--ink-soft); font-size: 11.5px; padding: 4px 10px;
+    border-radius: 999px; letter-spacing: 0.02em;
+  }
+  .detail-embed { border-radius: 12px; overflow: hidden; }
   .detail-embed iframe { display: block; width: 100%; border: 0; }
 
   .empty-state {
@@ -208,16 +210,6 @@
     padding: 12px 16px; font-size: 13px; color: var(--ink-soft); margin-bottom: 20px;
   }
 
-  .pop-overlay { position: fixed; inset: 0; z-index: 40; }
-  .pop-card {
-    position: fixed; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 10px;
-    box-shadow: var(--shadow); z-index: 41; padding: 16px;
-  }
-  .pop-card .pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-  .pop-card .pop-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 14px; }
-  .pop-close { background: none; border: none; cursor: pointer; color: var(--muted); flex: 0 0 auto; }
-  .pop-close:hover { color: var(--ink); }
-  .pop-links { display: flex; gap: 10px; }
   .pop-link {
     display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: var(--ink-soft);
     font-size: 11px;
@@ -227,6 +219,7 @@
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
     font-family: 'Space Grotesk', sans-serif;
   }
+  .pop-link .badge.wide { font-size: 9.5px; letter-spacing: 0.02em; }
   .pop-link:hover .badge { background: var(--accent-strong); }
 
   svg { display: block; }
@@ -250,8 +243,6 @@
   </div>
 </div>
 
-<div id="overlay-slot"></div>
-
 <script src="vendor/xlsx.core.min.js"></script>
 <script>
 (function () {
@@ -259,35 +250,9 @@
 
   var RELEASES = [];
 
-  // ---------- role / icon registry (matches the Credits Desk glyph set) ----------
-  var ROLES = [
-    { key: "saxophone", label: "Saxophone", category: "Performance",
-      icon: '<path d="M9 3v6c0 5 4 6 4 10a2 2 0 1 1-4 0"/><circle cx="9" cy="3" r="1" fill="currentColor" stroke="none"/>' },
-    { key: "vocals", label: "Vocals", category: "Performance",
-      icon: '<rect x="9" y="3" width="6" height="10" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="9" y1="21" x2="15" y2="21"/>' },
-    { key: "keyboards", label: "Keyboards", category: "Performance",
-      icon: '<rect x="3" y="5" width="18" height="14" rx="1"/><line x1="8" y1="5" x2="8" y2="13"/><line x1="13" y1="5" x2="13" y2="13"/><line x1="16" y1="5" x2="16" y2="13"/>' },
-    { key: "flute", label: "Flute", category: "Performance",
-      icon: '<circle cx="4" cy="12" r="1.6"/><line x1="6" y1="12" x2="21" y2="12"/><circle cx="9" cy="12" r="0.8" fill="currentColor" stroke="none"/><circle cx="13" cy="12" r="0.8" fill="currentColor" stroke="none"/><circle cx="17" cy="12" r="0.8" fill="currentColor" stroke="none"/>' },
-    { key: "clarinet", label: "Clarinet", category: "Performance",
-      icon: '<line x1="12" y1="3" x2="12" y2="17"/><path d="M9 17 L12 21 L15 17 Z"/><circle cx="12" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="12" cy="9.5" r="0.8" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="0.8" fill="currentColor" stroke="none"/>' },
-    { key: "drums", label: "Drums", category: "Performance",
-      icon: '<rect x="5" y="10" width="14" height="8" rx="2"/><line x1="6" y1="14" x2="15" y2="5"/><line x1="18" y1="14" x2="9" y2="5"/>' },
-    { key: "bass", label: "Bass", category: "Performance",
-      icon: '<rect x="3" y="13" width="7" height="7" rx="2"/><line x1="9" y1="14" x2="20" y2="4"/><line x1="17" y1="6" x2="19" y2="8"/>' },
-    { key: "arranging", label: "Arranging", category: "Production",
-      icon: '<line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="11" x2="21" y2="11"/><line x1="3" y1="15" x2="21" y2="15"/><circle cx="9" cy="18" r="2" fill="currentColor" stroke="none"/><line x1="11" y1="18" x2="11" y2="8"/><circle cx="16" cy="19" r="2" fill="currentColor" stroke="none"/><line x1="18" y1="19" x2="18" y2="9"/>' },
-    { key: "engineering", label: "Engineering", category: "Production",
-      icon: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/>' },
-    { key: "mixing", label: "Mixing", category: "Production",
-      icon: '<line x1="6" y1="4" x2="6" y2="20"/><rect x="4" y="9" width="4" height="3" rx="1"/><line x1="12" y1="4" x2="12" y2="20"/><rect x="10" y="14" width="4" height="3" rx="1"/><line x1="18" y1="4" x2="18" y2="20"/><rect x="16" y="6" width="4" height="3" rx="1"/>' },
-    { key: "producing", label: "Producing", category: "Production",
-      icon: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>' },
-    { key: "writing", label: "Writing", category: "Writing",
-      icon: '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><line x1="14" y1="7" x2="17" y2="10"/>' }
-  ];
+  // ---------- role / icon registry (loaded from data/roles.json) ----------
+  var ROLES = [];
   var ROLE_BY_KEY = {};
-  ROLES.forEach(function (r) { ROLE_BY_KEY[r.key] = r; });
   var CATEGORIES = ["Performance", "Production", "Writing"];
 
   function iconSvg(role, size) {
@@ -320,7 +285,6 @@
     selectedRoles: {},
     collapsedCategories: {},
     selectedReleaseId: null,
-    listenPop: null,
     loading: true,
     loadError: null,
     sortField: "date",
@@ -330,19 +294,6 @@
   function setState(patch) {
     Object.assign(state, patch);
     render();
-  }
-
-  function positionPopover(e, cardWidth, cardHeight) {
-    var rect = e.currentTarget.getBoundingClientRect();
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var left = rect.left;
-    var top = rect.bottom + 8;
-    if (left + cardWidth > vw - 12) left = Math.max(12, vw - cardWidth - 12);
-    if (top + cardHeight > vh - 12) {
-      var above = rect.top - cardHeight - 8;
-      top = above > 12 ? above : Math.max(12, vh - cardHeight - 12);
-    }
-    return { top: top, left: left };
   }
 
   // ---------- filtering ----------
@@ -439,12 +390,8 @@
       ? '<img src="' + escapeHtml(release.artworkUrl) + '" alt="" onerror="this.remove()">'
       : "";
     var bg = release.artworkUrl ? "" : tileColor(release.album || release.id);
-    var hasListen = release.bandcamp || release.spotify || release.youtube;
-    var overlay = hasListen
-      ? '<div class="play-overlay"><svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff"><polygon points="6,4 20,12 6,20"></polygon></svg></div>'
-      : "";
-    return '<div class="art" data-listen="' + release.id + '" style="' + (bg ? "background:" + bg + ";" : "") + '">' +
-      (release.artworkUrl ? "" : initials(release.album || "")) + art + overlay + '</div>';
+    return '<div class="art" style="' + (bg ? "background:" + bg + ";" : "") + '">' +
+      (release.artworkUrl ? "" : initials(release.album || "")) + art + '</div>';
   }
 
   // ---------- main list ----------
@@ -483,10 +430,10 @@
       var meta = [release.artist, release.year].filter(Boolean).join(" · ");
       html += '<div class="release" data-release="' + release.id + '">';
       html += '<div class="release-row' + (isActive ? " active" : "") + '" data-toggle="' + release.id + '">';
-      html += '<svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>';
       html += artHtml(release);
       html += '<div class="release-meta"><div class="name">' + escapeHtml(release.album) + '</div><div class="line">' + escapeHtml(meta) + '</div></div>';
       html += pillsHtml(uniqueAlbumRoles(release));
+      html += '<svg class="caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>';
       html += '</div>';
       html += '</div>';
     });
@@ -515,32 +462,55 @@
     }
 
     var meta = [release.artist, release.year].filter(Boolean).join(" · ");
-    var art = release.artworkUrl
-      ? '<img src="' + escapeHtml(release.artworkUrl) + '" alt="" onerror="this.remove()">'
-      : "";
-    var bg = release.artworkUrl ? "" : tileColor(release.album || release.id);
 
     var html = '<button class="detail-close" id="detail-close" title="Close">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>';
-    html += '<div class="detail-art" style="' + (bg ? "background:" + bg + ";" : "") + '">' +
-      (release.artworkUrl ? "" : initials(release.album || "")) + art + '</div>';
-    html += '<div class="detail-title">' + escapeHtml(release.album) + '</div>';
-    html += '<div class="detail-meta">' + escapeHtml(meta) + '</div>';
-
-    if (release.bandcamp || release.spotify || release.youtube) {
-      html += '<div class="detail-links">';
-      if (release.bandcamp) html += '<a class="pop-link" href="' + escapeHtml(release.bandcamp) + '" target="_blank" rel="noopener"><span class="badge">BC</span>Bandcamp</a>';
-      if (release.spotify) html += '<a class="pop-link" href="' + escapeHtml(release.spotify) + '" target="_blank" rel="noopener"><span class="badge">SP</span>Spotify</a>';
-      if (release.youtube) html += '<a class="pop-link" href="' + escapeHtml(release.youtube) + '" target="_blank" rel="noopener"><span class="badge">YT</span>YouTube</a>';
-      html += '</div>';
-    }
-
-    html += '<div class="detail-desc">' + (escapeHtml(release.description) || '<em style="color:var(--muted)">No notes yet.</em>') + '</div>';
 
     if (release.spotify) {
       html += '<div class="detail-embed"><iframe src="' + escapeHtml(spotifyEmbedUrl(release.spotify)) +
-        '" width="100%" height="152" frameborder="0" allowfullscreen ' +
+        '" width="100%" height="352" frameborder="0" allowfullscreen ' +
         'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>';
+    } else if (release.bandcampEmbedUrl) {
+      html += '<div class="detail-embed"><iframe src="' + escapeHtml(release.bandcampEmbedUrl) +
+        '" width="100%" height="352" seamless loading="lazy"></iframe></div>';
+    } else {
+      var art = release.artworkUrl
+        ? '<img src="' + escapeHtml(release.artworkUrl) + '" alt="" onerror="this.remove()">'
+        : "";
+      var bg = release.artworkUrl ? "" : tileColor(release.album || release.id);
+      html += '<div class="detail-art" style="' + (bg ? "background:" + bg + ";" : "") + '">' +
+        (release.artworkUrl ? "" : initials(release.album || "")) + art + '</div>';
+    }
+
+    html += '<div class="detail-title">' + escapeHtml(release.album) + '</div>';
+    html += '<div class="detail-meta">' + escapeHtml(meta) + '</div>';
+    html += '<div class="detail-desc">' + (escapeHtml(release.description) || '<em style="color:var(--muted)">No notes yet.</em>') + '</div>';
+
+    var roleTags = uniqueAlbumRoles(release).map(function (k) { return ROLE_BY_KEY[k]; }).filter(Boolean);
+    if (roleTags.length) {
+      roleTags.sort(function (a, b) { return a.label.localeCompare(b.label); });
+      html += '<div class="role-tags">' + roleTags.map(function (r) {
+        return '<span class="role-tag">' + escapeHtml(r.label) + '</span>';
+      }).join('') + '</div>';
+    }
+
+    var linkDefs = [
+      ["bandcamp", "BC", "Bandcamp"],
+      ["spotify", "SP", "Spotify"],
+      ["youtube", "YT", "YouTube"],
+      ["website", "WEB", "Website"],
+      ["instagram", "IG", "Instagram"],
+      ["tiktok", "TT", "TikTok"]
+    ];
+    var hasLinks = linkDefs.some(function (d) { return release[d[0]]; });
+    if (hasLinks) {
+      html += '<div class="detail-links">';
+      linkDefs.forEach(function (d) {
+        if (!release[d[0]]) return;
+        html += '<a class="pop-link" href="' + escapeHtml(release[d[0]]) + '" target="_blank" rel="noopener"><span class="badge' +
+          (d[1].length > 2 ? ' wide' : '') + '">' + d[1] + '</span>' + d[2] + '</a>';
+      });
+      html += '</div>';
     }
 
     detail.innerHTML = html;
@@ -557,19 +527,8 @@
   function wireMainEvents() {
     document.querySelectorAll("[data-toggle]").forEach(function (el) {
       el.addEventListener("click", function (e) {
-        if (e.target.closest("[data-listen]")) return;
         var id = el.getAttribute("data-toggle");
         setState({ selectedReleaseId: state.selectedReleaseId === id ? null : id });
-      });
-    });
-    document.querySelectorAll("[data-listen]").forEach(function (el) {
-      el.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var id = el.getAttribute("data-listen");
-        var release = state.releases.find(function (r) { return r.id === id; });
-        if (!release || !(release.bandcamp || release.spotify || release.youtube)) return;
-        var pos = positionPopover(e, 220, 110);
-        setState({ listenPop: { title: release.album, bandcamp: release.bandcamp, spotify: release.spotify, youtube: release.youtube, top: pos.top, left: pos.left } });
       });
     });
     document.querySelectorAll("[data-sort-field]").forEach(function (el) {
@@ -584,29 +543,6 @@
     });
   }
 
-  // ---------- popovers ----------
-  function renderOverlays() {
-    var slot = document.getElementById("overlay-slot");
-    var html = "";
-
-    if (state.listenPop) {
-      var l = state.listenPop;
-      html += '<div class="pop-overlay" id="listen-overlay"></div>';
-      html += '<div class="pop-card" style="top:' + l.top + 'px; left:' + l.left + 'px;">' +
-        '<div class="pop-head"><div class="pop-title">' + escapeHtml(l.title) + '</div>' +
-        '<button class="pop-close" id="listen-close">&times;</button></div><div class="pop-links">';
-      if (l.bandcamp) html += '<a class="pop-link" href="' + escapeHtml(l.bandcamp) + '" target="_blank" rel="noopener"><span class="badge">BC</span>Bandcamp</a>';
-      if (l.spotify) html += '<a class="pop-link" href="' + escapeHtml(l.spotify) + '" target="_blank" rel="noopener"><span class="badge">SP</span>Spotify</a>';
-      if (l.youtube) html += '<a class="pop-link" href="' + escapeHtml(l.youtube) + '" target="_blank" rel="noopener"><span class="badge">YT</span>YouTube</a>';
-      html += '</div></div>';
-    }
-
-    slot.innerHTML = html;
-
-    var lo = document.getElementById("listen-overlay"); if (lo) lo.addEventListener("click", function () { setState({ listenPop: null }); });
-    var lc = document.getElementById("listen-close"); if (lc) lc.addEventListener("click", function () { setState({ listenPop: null }); });
-  }
-
   // ---------- render root ----------
   function render() {
     var active = document.activeElement;
@@ -614,7 +550,6 @@
     renderSidebar();
     renderMain();
     renderDetail();
-    renderOverlays();
     if (activeId) {
       var el = document.getElementById(activeId);
       if (el && el !== document.activeElement) el.focus();
@@ -653,6 +588,11 @@
         bandcamp: String(row.bandcamp || ""),
         spotify: String(row.spotify || ""),
         youtube: String(row.youtube || ""),
+        website: String(row.website || ""),
+        instagram: String(row.instagram || ""),
+        tiktok: String(row.tiktok || ""),
+        artworkUrl: String(row.artworkUrl || ""),
+        bandcampEmbedUrl: String(row.bandcampEmbedUrl || ""),
         year: row.year || "",
         createdAt: row.createdAt || 0,
         tracks: tracksByRelease[id] || []
@@ -661,12 +601,21 @@
   }
 
   function loadData() {
-    fetch("data/credits.xlsx")
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
+    var cacheBust = "?t=" + Date.now();
+    Promise.all([
+      fetch("data/credits.xlsx" + cacheBust, { cache: "no-store" }).then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status + " loading credits.xlsx");
         return res.arrayBuffer();
+      }),
+      fetch("data/roles.json" + cacheBust, { cache: "no-store" }).then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status + " loading roles.json");
+        return res.json();
       })
-      .then(function (buf) {
+    ])
+      .then(function (results) {
+        var buf = results[0], roles = results[1];
+        ROLES.length = 0;
+        roles.forEach(function (r) { ROLES.push(r); ROLE_BY_KEY[r.key] = r; });
         state.releases = buildReleases(XLSX.read(buf, { type: "array" }));
         state.loading = false;
         render();

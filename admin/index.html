@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Credits Admin</title>
+<style>
+  :root {
+    --paper: #faf9f6; --paper-raised: #f2efe6; --paper-sunken: #eeeadf;
+    --ink: #2c2620; --ink-soft: #4a453a; --muted: #8a8371;
+    --line: #e0dbcd; --line-strong: #cfc9ba;
+    --accent: #8c5a26; --accent-strong: #6b4419; --accent-tint: #f1e4d0;
+    --error: #b3441e; --error-tint: #f7e4dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #17140f; --paper-raised: #211c15; --paper-sunken: #1c1811;
+      --ink: #ece6d9; --ink-soft: #c9c0ac; --muted: #8f8770;
+      --line: #383226; --line-strong: #4a4232;
+      --accent: #e4b26a; --accent-strong: #f3d9a4; --accent-tint: #322a1b;
+      --error: #e08b6a; --error-tint: #3a241c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: system-ui, sans-serif;
+    padding: 32px 20px 80px; line-height: 1.5;
+  }
+  .shell { max-width: 640px; margin: 0 auto; }
+  .shell.wide { max-width: 1080px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 16px 0 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  input[type=text], input[type=url], input[type=number], input[type=search], textarea {
+    width: 100%; padding: 9px 10px; font-size: 14px; font-family: inherit;
+    background: var(--paper-raised); border: 1px solid var(--line-strong); border-radius: 6px; color: var(--ink);
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  button {
+    font-family: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--line-strong);
+    background: var(--paper-raised); color: var(--ink); padding: 9px 16px; font-size: 13.5px;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  button.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--paper); }
+  button.danger:hover { border-color: var(--error); color: var(--error); }
+  .fetch-row { display: flex; gap: 8px; }
+  .fetch-row input { flex: 1; }
+  .error { background: var(--error-tint); color: var(--error); border-radius: 6px; padding: 10px 12px; font-size: 13px; margin-top: 12px; }
+  .card { display: none; margin-top: 28px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .card.show { display: block; }
+  .cover-row { display: flex; gap: 14px; align-items: flex-start; }
+  .cover-row img { width: 88px; height: 88px; object-fit: cover; border-radius: 6px; background: var(--paper-sunken); flex: 0 0 auto; }
+  .cover-fields { flex: 1; min-width: 0; }
+  .cover-fields label:first-child { margin-top: 0; }
+  .roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 12px; }
+  .role-check { display: flex; align-items: center; gap: 6px; font-size: 13.5px; padding: 3px 0; }
+  .role-check input { accent-color: var(--accent); }
+  .cat-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 14px 0 6px; }
+  .track-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .track-row input { flex: 1; }
+  .track-row .num { flex: 0 0 22px; color: var(--muted); font-size: 12px; text-align: right; }
+  .track-row button { padding: 6px 9px; font-size: 12px; }
+  .actions { margin-top: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .success { background: var(--accent-tint); color: var(--accent-strong); border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .hint.ok { color: var(--accent-strong); }
+  .hint.bad { color: var(--error); }
+  .section-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    margin: 26px 0 4px; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+  .upload-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .upload-row input[type=file] { font-size: 12.5px; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .tab-btn {
+    background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0;
+    padding: 8px 4px; margin-right: 20px; font-size: 14px; color: var(--muted);
+  }
+  .tab-btn:hover { color: var(--ink); border-color: transparent; }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .panel { display: none; }
+  .panel.show { display: block; }
+
+  .release-list { border-top: 1px solid var(--line); margin-top: 14px; }
+  .release-list-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 4px; cursor: pointer;
+    border-bottom: 1px solid var(--line); font-size: 13.5px; border-left: 2px solid transparent;
+  }
+  .release-list-row:hover { background: var(--paper-raised); }
+  .release-list-row.active { background: var(--accent-tint); border-left-color: var(--accent); }
+  .release-list-row .rl-name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .release-list-row .rl-meta { color: var(--muted); font-size: 12px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 16px 4px; }
+
+  .edit-layout { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 32px; align-items: start; }
+  @media (max-width: 860px) {
+    .edit-layout { grid-template-columns: 1fr; }
+    .edit-card-col { position: static !important; }
+  }
+  .edit-list-col { min-width: 0; }
+  .edit-card-col {
+    position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px; padding: 20px;
+  }
+  .edit-card-col .card { margin-top: 0; border-top: none; padding-top: 0; }
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <h1>Credits Admin</h1>
+  <div class="sub">Add new releases or edit ones already on the site.</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="add">Add release</button>
+    <button class="tab-btn" data-tab="edit">Edit releases</button>
+  </div>
+
+  <!-- ===================== ADD PANEL ===================== -->
+  <div class="panel show" id="panel-add">
+    <label>Spotify link</label>
+    <div class="fetch-row">
+      <input type="url" id="add-spotify-url" placeholder="https://open.spotify.com/album/...">
+      <button id="add-fetch-btn">Fetch</button>
+    </div>
+    <div id="add-fetch-error"></div>
+
+    <div class="card" id="add-card">
+      <div class="cover-row">
+        <img id="add-cover-img" alt="">
+        <div class="cover-fields">
+          <label>Album</label>
+          <input type="text" id="add-album">
+          <label>Artist</label>
+          <input type="text" id="add-artist">
+          <label>Year</label>
+          <input type="number" id="add-year" style="width:110px">
+        </div>
+      </div>
+
+      <label>Artwork URL</label>
+      <input type="url" id="add-artwork-url" placeholder="Auto-filled from Spotify, or paste your own">
+      <div class="upload-row">
+        <input type="file" id="add-artwork-file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <span class="hint" id="add-upload-status"></span>
+      </div>
+
+      <div class="section-title">Listen &amp; follow links</div>
+
+      <label>Bandcamp link (optional)</label>
+      <input type="url" id="add-bandcamp" placeholder="https://...bandcamp.com/album/...">
+      <label>Bandcamp embed code (optional)</label>
+      <textarea id="add-bandcamp-embed" placeholder="Paste the <iframe> snippet from Bandcamp's Share/Embed panel. Used as the player when there's no Spotify link."></textarea>
+      <div class="hint" id="add-bandcamp-embed-status"></div>
+      <label>YouTube link (optional)</label>
+      <input type="url" id="add-youtube" placeholder="https://www.youtube.com/watch?v=...">
+      <label>Website (optional)</label>
+      <input type="text" id="add-website" placeholder="yourband.com">
+      <label>Instagram (optional)</label>
+      <input type="text" id="add-instagram" placeholder="@handle or full URL">
+      <label>TikTok (optional)</label>
+      <input type="text" id="add-tiktok" placeholder="@handle or full URL">
+
+      <label>Your roles on this release</label>
+      <div id="add-roles"></div>
+
+      <label>Notes</label>
+      <textarea id="add-description" placeholder="Liner notes, context, how this one came together..."></textarea>
+
+      <label>Tracklist</label>
+      <div id="add-tracks"></div>
+      <button id="add-track-btn" type="button">+ Add track</button>
+
+      <div class="actions">
+        <button class="primary" id="add-save-btn">Save release</button>
+        <span id="add-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== EDIT PANEL ===================== -->
+  <div class="panel" id="panel-edit">
+    <div class="edit-layout">
+      <div class="edit-list-col">
+        <label>Search</label>
+        <input type="search" id="edit-search" placeholder="Filter by album or artist...">
+        <div class="release-list" id="edit-list"><div class="empty">Loading releases…</div></div>
+      </div>
+
+      <div class="edit-card-col">
+    <div class="empty" id="edit-empty">Select a release on the left to edit it.</div>
+    <div class="card" id="edit-card">
+      <div class="cover-row">
+        <img id="edit-cover-img" alt="">
+        <div class="cover-fields">
+          <label>Album</label>
+          <input type="text" id="edit-album">
+          <label>Artist</label>
+          <input type="text" id="edit-artist">
+          <label>Year</label>
+          <input type="number" id="edit-year" style="width:110px">
+        </div>
+      </div>
+
+      <label>Artwork URL</label>
+      <input type="url" id="edit-artwork-url" placeholder="Paste an image URL, or upload below">
+      <div class="upload-row">
+        <input type="file" id="edit-artwork-file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <span class="hint" id="edit-upload-status"></span>
+      </div>
+
+      <div class="section-title">Listen &amp; follow links</div>
+
+      <label>Spotify link</label>
+      <input type="url" id="edit-spotify">
+      <label>Bandcamp link (optional)</label>
+      <input type="url" id="edit-bandcamp">
+      <label>Bandcamp embed code (optional)</label>
+      <textarea id="edit-bandcamp-embed" placeholder="Paste the <iframe> snippet from Bandcamp's Share/Embed panel. Used as the player when there's no Spotify link."></textarea>
+      <div class="hint" id="edit-bandcamp-embed-status"></div>
+      <label>YouTube link (optional)</label>
+      <input type="url" id="edit-youtube">
+      <label>Website (optional)</label>
+      <input type="text" id="edit-website">
+      <label>Instagram (optional)</label>
+      <input type="text" id="edit-instagram" placeholder="@handle or full URL">
+      <label>TikTok (optional)</label>
+      <input type="text" id="edit-tiktok" placeholder="@handle or full URL">
+
+      <label>Your roles on this release</label>
+      <div class="hint" id="edit-roles-hint" style="display:none">Tracks currently have different roles from each other; saving here will apply one shared set to every track.</div>
+      <div id="edit-roles"></div>
+
+      <label>Notes</label>
+      <textarea id="edit-description"></textarea>
+
+      <label>Tracklist</label>
+      <div id="edit-tracks"></div>
+      <button id="edit-track-btn" type="button">+ Add track</button>
+
+      <div class="actions">
+        <button class="primary" id="edit-save-btn">Save changes</button>
+        <button class="danger" id="edit-delete-btn" type="button">Delete release</button>
+        <span id="edit-status"></span>
+      </div>
+    </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROLES = [];
+  var CATEGORIES = ["Performance", "Production", "Writing"];
+  var allReleases = [];
+  var addFetchedData = null;
+  var editingId = null;
+
+  fetch("/api/roles").then(function (r) { return r.json(); }).then(function (roles) {
+    ROLES = roles;
+    renderRoles(document.getElementById("add-roles"), []);
+    renderRoles(document.getElementById("edit-roles"), []);
+  });
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var tab = btn.getAttribute("data-tab");
+      document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function (p) { p.classList.remove("show"); });
+      btn.classList.add("active");
+      document.getElementById("panel-" + tab).classList.add("show");
+      document.getElementById("shell").classList.toggle("wide", tab === "edit");
+      if (tab === "edit") loadReleaseList();
+    });
+  });
+
+  // ---------- shared render helpers ----------
+  function renderRoles(container, checkedKeys) {
+    var checkedSet = {};
+    (checkedKeys || []).forEach(function (k) { checkedSet[k] = true; });
+    var html = "";
+    CATEGORIES.forEach(function (cat) {
+      var inCat = ROLES.filter(function (r) { return r.category === cat; });
+      if (!inCat.length) return;
+      html += '<div class="cat-title">' + cat + '</div><div class="roles-grid">';
+      inCat.forEach(function (r) {
+        html += '<label class="role-check"><input type="checkbox" value="' + r.key + '"' +
+          (checkedSet[r.key] ? " checked" : "") + '> ' + r.label + '</label>';
+      });
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function getCheckedRoles(container) {
+    return Array.prototype.slice.call(container.querySelectorAll("input:checked")).map(function (el) { return el.value; });
+  }
+
+  function renderTracks(container, tracks) {
+    var html = "";
+    tracks.forEach(function (t, i) {
+      html += '<div class="track-row"><span class="num">' + (i + 1) + '.</span>' +
+        '<input type="text" data-track value="' + escapeAttr(t.song || "") + '">' +
+        '<button type="button" data-remove-track>&times;</button></div>';
+    });
+    container.innerHTML = html;
+    wireTrackRemoves(container);
+  }
+
+  function wireTrackRemoves(container) {
+    container.querySelectorAll("[data-remove-track]").forEach(function (btn) {
+      btn.onclick = function () {
+        btn.closest(".track-row").remove();
+        renumberTracks(container);
+        autosaveTracksIfEditing(container);
+      };
+    });
+  }
+
+  function renumberTracks(container) {
+    container.querySelectorAll(".track-row").forEach(function (row, i) {
+      row.querySelector(".num").textContent = (i + 1) + ".";
+    });
+  }
+
+  function autosaveTracksIfEditing(container) {
+    if (container.id === "edit-tracks") autosaveEdit();
+  }
+
+  function addTrackRow(container) {
+    var div = document.createElement("div");
+    div.className = "track-row";
+    div.innerHTML = '<span class="num"></span><input type="text" data-track value=""><button type="button" data-remove-track>&times;</button>';
+    container.appendChild(div);
+    div.querySelector("[data-remove-track]").onclick = function () {
+      div.remove();
+      renumberTracks(container);
+      autosaveTracksIfEditing(container);
+    };
+    renumberTracks(container);
+    div.querySelector("input").focus();
+  }
+
+  function getTracks(container) {
+    return Array.prototype.slice.call(container.querySelectorAll("[data-track]"))
+      .map(function (el) { return { song: el.value.trim() }; })
+      .filter(function (t) { return t.song; });
+  }
+
+  function extractBandcampEmbedUrl(pasted) {
+    var s = String(pasted || "").trim();
+    if (!s) return "";
+    var m = s.match(/src="(https:\/\/bandcamp\.com\/EmbeddedPlayer\/[^"]+)"/i);
+    if (m) return m[1];
+    if (/^https:\/\/bandcamp\.com\/EmbeddedPlayer\//i.test(s)) return s;
+    return "";
+  }
+
+  function wireBandcampEmbed(textareaEl, statusEl) {
+    textareaEl.addEventListener("input", function () {
+      var val = textareaEl.value.trim();
+      if (!val) { statusEl.textContent = ""; statusEl.className = "hint"; return; }
+      var url = extractBandcampEmbedUrl(val);
+      if (url) {
+        statusEl.textContent = "Embed found ✓";
+        statusEl.className = "hint ok";
+      } else {
+        statusEl.textContent = "No bandcamp.com/EmbeddedPlayer link found in that.";
+        statusEl.className = "hint bad";
+      }
+    });
+  }
+
+  function wireArtworkUpload(fileEl, urlEl, statusEl, imgEl, onDone) {
+    fileEl.addEventListener("change", function () {
+      var file = fileEl.files[0];
+      if (!file) return;
+      var form = new FormData();
+      form.append("file", file);
+      statusEl.textContent = "Uploading…";
+      statusEl.className = "hint";
+      fetch("/api/upload-artwork", { method: "POST", body: form })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok) throw new Error(result.data.error || "Upload failed.");
+          urlEl.value = result.data.url;
+          if (imgEl) imgEl.src = result.data.url;
+          statusEl.textContent = "Uploaded ✓";
+          statusEl.className = "hint ok";
+          if (onDone) onDone();
+        })
+        .catch(function (err) {
+          statusEl.textContent = err.message;
+          statusEl.className = "hint bad";
+        });
+    });
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ===================== ADD PANEL =====================
+
+  document.getElementById("add-track-btn").addEventListener("click", function () {
+    addTrackRow(document.getElementById("add-tracks"));
+  });
+
+  wireBandcampEmbed(document.getElementById("add-bandcamp-embed"), document.getElementById("add-bandcamp-embed-status"));
+  wireArtworkUpload(
+    document.getElementById("add-artwork-file"),
+    document.getElementById("add-artwork-url"),
+    document.getElementById("add-upload-status"),
+    document.getElementById("add-cover-img")
+  );
+  document.getElementById("add-artwork-url").addEventListener("input", function () {
+    document.getElementById("add-cover-img").src = this.value.trim();
+  });
+
+  document.getElementById("add-fetch-btn").addEventListener("click", function () {
+    var url = document.getElementById("add-spotify-url").value.trim();
+    var errorEl = document.getElementById("add-fetch-error");
+    errorEl.innerHTML = "";
+    if (!url) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = "Fetching…";
+    fetch("/api/fetch-album", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Fetch failed.");
+        addFetchedData = result.data;
+        document.getElementById("add-album").value = addFetchedData.album || "";
+        document.getElementById("add-artist").value = addFetchedData.artist || "";
+        document.getElementById("add-year").value = addFetchedData.year || "";
+        document.getElementById("add-artwork-url").value = addFetchedData.artworkUrl || "";
+        document.getElementById("add-cover-img").src = addFetchedData.artworkUrl || "";
+        renderTracks(document.getElementById("add-tracks"), addFetchedData.tracks || []);
+        document.getElementById("add-card").classList.add("show");
+        document.getElementById("add-status").textContent = "";
+      })
+      .catch(function (err) {
+        errorEl.innerHTML = '<div class="error">' + escapeHtml(err.message) + '</div>';
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Fetch";
+      });
+  });
+
+  document.getElementById("add-save-btn").addEventListener("click", function () {
+    if (!addFetchedData) return;
+    var body = {
+      spotify: addFetchedData.spotifyUrl,
+      artworkUrl: document.getElementById("add-artwork-url").value.trim(),
+      album: document.getElementById("add-album").value.trim(),
+      artist: document.getElementById("add-artist").value.trim(),
+      year: Number(document.getElementById("add-year").value) || "",
+      bandcamp: document.getElementById("add-bandcamp").value.trim(),
+      bandcampEmbedUrl: extractBandcampEmbedUrl(document.getElementById("add-bandcamp-embed").value),
+      youtube: document.getElementById("add-youtube").value.trim(),
+      website: document.getElementById("add-website").value.trim(),
+      instagram: document.getElementById("add-instagram").value.trim(),
+      tiktok: document.getElementById("add-tiktok").value.trim(),
+      description: document.getElementById("add-description").value.trim(),
+      roles: getCheckedRoles(document.getElementById("add-roles")),
+      tracks: getTracks(document.getElementById("add-tracks"))
+    };
+
+    var btn = this;
+    var statusEl = document.getElementById("add-status");
+    btn.disabled = true;
+    statusEl.textContent = "Saving…";
+    fetch("/api/save-release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Save failed.");
+        statusEl.innerHTML = '<span class="success">Saved as "' + result.data.id + '" — refresh the credits page to see it.</span>';
+      })
+      .catch(function (err) {
+        statusEl.innerHTML = '<span class="error" style="display:inline-block">' + escapeHtml(err.message) + '</span>';
+      })
+      .finally(function () {
+        btn.disabled = false;
+      });
+  });
+
+  // ===================== EDIT PANEL =====================
+
+  function loadReleaseList() {
+    fetch("/api/releases")
+      .then(function (r) { return r.json(); })
+      .then(function (releases) {
+        allReleases = releases;
+        renderReleaseList();
+      })
+      .catch(function () {
+        document.getElementById("edit-list").innerHTML = '<div class="empty">Could not load releases.</div>';
+      });
+  }
+
+  function renderReleaseList() {
+    var q = document.getElementById("edit-search").value.trim().toLowerCase();
+    var listEl = document.getElementById("edit-list");
+    var filtered = allReleases.filter(function (r) {
+      if (!q) return true;
+      return (r.album + " " + r.artist).toLowerCase().indexOf(q) !== -1;
+    });
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="empty">No releases match.</div>';
+      return;
+    }
+    listEl.innerHTML = filtered.map(function (r) {
+      return '<div class="release-list-row' + (r.id === editingId ? " active" : "") + '" data-id="' + escapeAttr(r.id) + '">' +
+        '<span class="rl-name">' + escapeHtml(r.album) + '</span>' +
+        '<span class="rl-meta">' + escapeHtml([r.artist, r.year].filter(Boolean).join(" · ")) + '</span></div>';
+    }).join("");
+    listEl.querySelectorAll(".release-list-row").forEach(function (row) {
+      row.addEventListener("click", function () {
+        openEditCard(row.getAttribute("data-id"));
+      });
+    });
+  }
+
+  document.getElementById("edit-search").addEventListener("input", renderReleaseList);
+
+  document.getElementById("edit-track-btn").addEventListener("click", function () {
+    addTrackRow(document.getElementById("edit-tracks"));
+  });
+
+  wireBandcampEmbed(document.getElementById("edit-bandcamp-embed"), document.getElementById("edit-bandcamp-embed-status"));
+  wireArtworkUpload(
+    document.getElementById("edit-artwork-file"),
+    document.getElementById("edit-artwork-url"),
+    document.getElementById("edit-upload-status"),
+    document.getElementById("edit-cover-img"),
+    function () { autosaveEdit(); }
+  );
+  document.getElementById("edit-artwork-url").addEventListener("input", function () {
+    document.getElementById("edit-cover-img").src = this.value.trim();
+  });
+
+  function openEditCard(id) {
+    var release = allReleases.find(function (r) { return r.id === id; });
+    if (!release) return;
+    editingId = id;
+
+    document.getElementById("edit-album").value = release.album || "";
+    document.getElementById("edit-artist").value = release.artist || "";
+    document.getElementById("edit-year").value = release.year || "";
+    document.getElementById("edit-spotify").value = release.spotify || "";
+    document.getElementById("edit-bandcamp").value = release.bandcamp || "";
+    document.getElementById("edit-bandcamp-embed").value = release.bandcampEmbedUrl || "";
+    document.getElementById("edit-bandcamp-embed-status").textContent = "";
+    document.getElementById("edit-youtube").value = release.youtube || "";
+    document.getElementById("edit-website").value = release.website || "";
+    document.getElementById("edit-instagram").value = release.instagram || "";
+    document.getElementById("edit-tiktok").value = release.tiktok || "";
+    document.getElementById("edit-artwork-url").value = release.artworkUrl || "";
+    document.getElementById("edit-cover-img").src = release.artworkUrl || "";
+    document.getElementById("edit-upload-status").textContent = "";
+    document.getElementById("edit-description").value = release.description || "";
+
+    var tracks = release.tracks || [];
+    var roleSets = tracks.map(function (t) { return (t.roles || []).slice().sort().join(","); });
+    var uniform = roleSets.every(function (s) { return s === roleSets[0]; });
+    document.getElementById("edit-roles-hint").style.display = uniform ? "none" : "block";
+    renderRoles(document.getElementById("edit-roles"), uniform ? (tracks[0] ? tracks[0].roles : []) : []);
+
+    renderTracks(document.getElementById("edit-tracks"), tracks);
+    document.getElementById("edit-status").textContent = "";
+    document.getElementById("edit-card").classList.add("show");
+    document.getElementById("edit-empty").style.display = "none";
+    renderReleaseList();
+  }
+
+  function buildEditBody() {
+    return {
+      album: document.getElementById("edit-album").value.trim(),
+      artist: document.getElementById("edit-artist").value.trim(),
+      year: Number(document.getElementById("edit-year").value) || "",
+      spotify: document.getElementById("edit-spotify").value.trim(),
+      bandcamp: document.getElementById("edit-bandcamp").value.trim(),
+      bandcampEmbedUrl: extractBandcampEmbedUrl(document.getElementById("edit-bandcamp-embed").value),
+      youtube: document.getElementById("edit-youtube").value.trim(),
+      website: document.getElementById("edit-website").value.trim(),
+      instagram: document.getElementById("edit-instagram").value.trim(),
+      tiktok: document.getElementById("edit-tiktok").value.trim(),
+      artworkUrl: document.getElementById("edit-artwork-url").value.trim(),
+      description: document.getElementById("edit-description").value.trim(),
+      roles: getCheckedRoles(document.getElementById("edit-roles")),
+      tracks: getTracks(document.getElementById("edit-tracks"))
+    };
+  }
+
+  var autosaveClearTimer = null;
+  function autosaveEdit() {
+    if (!editingId) return;
+    var id = editingId;
+    var body = buildEditBody();
+    if (!body.album || !body.tracks.length) return;
+
+    var statusEl = document.getElementById("edit-status");
+    statusEl.textContent = "Saving…";
+    fetch("/api/releases/" + encodeURIComponent(id), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Save failed.");
+        if (editingId !== id) return;
+        var cached = allReleases.find(function (r) { return r.id === id; });
+        if (cached) Object.assign(cached, body);
+        statusEl.innerHTML = '<span class="success">Saved ✓</span>';
+        clearTimeout(autosaveClearTimer);
+        autosaveClearTimer = setTimeout(function () { statusEl.textContent = ""; }, 2500);
+      })
+      .catch(function (err) {
+        statusEl.innerHTML = '<span class="error" style="display:inline-block">' + escapeHtml(err.message) + '</span>';
+      });
+  }
+
+  document.getElementById("edit-card").addEventListener("change", function (e) {
+    if (!editingId) return;
+    if (e.target.type === "file") return;
+    autosaveEdit();
+  });
+
+  document.getElementById("edit-save-btn").addEventListener("click", function () {
+    if (!editingId) return;
+    var body = buildEditBody();
+
+    var btn = this;
+    var statusEl = document.getElementById("edit-status");
+    btn.disabled = true;
+    statusEl.textContent = "Saving…";
+    fetch("/api/releases/" + encodeURIComponent(editingId), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Save failed.");
+        statusEl.innerHTML = '<span class="success">Saved — refresh the credits page to see it.</span>';
+        loadReleaseList();
+      })
+      .catch(function (err) {
+        statusEl.innerHTML = '<span class="error" style="display:inline-block">' + escapeHtml(err.message) + '</span>';
+      })
+      .finally(function () {
+        btn.disabled = false;
+      });
+  });
+
+  document.getElementById("edit-delete-btn").addEventListener("click", function () {
+    if (!editingId) return;
+    if (!confirm("Delete this release permanently? This can't be undone.")) return;
+    var statusEl = document.getElementById("edit-status");
+    fetch("/api/releases/" + encodeURIComponent(editingId), { method: "DELETE" })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) throw new Error(result.data.error || "Delete failed.");
+        document.getElementById("edit-card").classList.remove("show");
+        document.getElementById("edit-empty").style.display = "block";
+        editingId = null;
+        statusEl.textContent = "";
+        loadReleaseList();
+      })
+      .catch(function (err) {
+        statusEl.innerHTML = '<span class="error" style="display:inline-block">' + escapeHtml(err.message) + '</span>';
+      });
+  });
+})();
+</script>
+</body>
+</html>
